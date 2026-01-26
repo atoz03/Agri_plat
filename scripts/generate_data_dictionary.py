@@ -58,22 +58,18 @@ def extract_titles(markdown_text: str) -> list[str]:
 
 def main() -> None:
     base_dir = Path(__file__).resolve().parent.parent
-    md_path = base_dir / "MinerU_markdown_1标准正文-农业物联网 大田环境感知数据接入要求(2)_20260126164505_2015707552499785728.md"
-    content = md_path.read_text(encoding="utf-8")
-    tables = extract_tables(content)
-    titles = extract_titles(content)
-    combined = []
-    for index, table in enumerate(tables):
-        title = titles[index] if index < len(titles) else f"表 {index + 1}"
-        combined.append({"title": title, "headers": table["headers"], "rows": table["rows"]})
-    output = {
-        "source": md_path.name,
-        "tables": combined,
-    }
     data_dir = base_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     out_path = data_dir / "data_dictionary.json"
-    out_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+    if not out_path.exists():
+        raise FileNotFoundError(
+            f"找不到 {out_path}。本目默认内置数据字典 JSON。"
+        )
+    # 仅做一次格式化/校验，保证输出稳定
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or "tables" not in payload:
+        raise ValueError("data_dictionary.json 格式不正确：缺少 tables 字段")
+    out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 if __name__ == "__main__":
