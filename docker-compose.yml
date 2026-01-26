@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./data/mosquitto:/mosquitto/data
+      - ./data/mosquitto-log:/mosquitto/log
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  sftp:
+    image: atmoz/sftp
+    ports:
+      - "2222:22"
+    command: "demo:demo:1001"
+    volumes:
+      - ./data/sftp:/home/demo/upload
+  ftps:
+    image: stilliard/pure-ftpd
+    ports:
+      - "2121:21"
+      - "30000-30009:30000-30009"
+    environment:
+      PUBLICHOST: "localhost"
+      FTP_USER_NAME: "demo"
+      FTP_USER_PASS: "demo"
+      FTP_USER_HOME: "/home/demo"
+    volumes:
+      - ./data/ftps:/home/demo

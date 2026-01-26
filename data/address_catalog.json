@@ -1,0 +1,30 @@
+[
+  {
+    "code": "330108002020003000590000100",
+    "sourceaddress": "佳木斯市七星农场第一管理区田块1",
+    "lon": "132.601522",
+    "lat": "47.302815",
+    "city": "佳木斯市",
+    "county": "",
+    "farm": "七星农场",
+    "managementArea": "第一管理区",
+    "fields": "田块1",
+    "area": "100",
+    "addertype": "农场",
+    "usage_type": "农业"
+  },
+  {
+    "code": "230800002020003000590000200",
+    "sourceaddress": "佳木斯市七星农场第二管理区田块2",
+    "lon": "132.602000",
+    "lat": "47.303000",
+    "city": "佳木斯市",
+    "county": "",
+    "farm": "七星农场",
+    "managementArea": "第二管理区",
+    "fields": "田块2",
+    "area": "80",
+    "addertype": "农场",
+    "usage_type": "农业"
+  }
+]

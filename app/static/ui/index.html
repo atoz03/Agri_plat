@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>农业物联网接入平台 - 演示看板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <div class="min-h-screen">
+      <header class="border-b bg-white">
+        <div class="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-lg bg-emerald-600"></div>
+            <div>
+              <div class="text-lg font-semibold">农业物联网大田环境感知数据接入平台</div>
+              <div class="text-sm text-slate-500">演示前端（无需构建，静态页面）</div>
+            </div>
+          </div>
+          <div class="text-sm text-slate-600">
+            <span id="connStatus" class="px-2 py-1 rounded bg-slate-100">未连接</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="mx-auto max-w-7xl px-4 py-6 grid grid-cols-12 gap-4">
+        <aside class="col-span-12 md:col-span-3 lg:col-span-2">
+          <div class="rounded-xl border bg-white p-4 space-y-3">
+            <div class="text-sm font-medium">导航</div>
+            <nav class="space-y-2">
+              <button data-view="overview" class="nav-btn w-full text-left px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700">概览</button>
+              <button data-view="devices" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">设备</button>
+              <button data-view="deviceData" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">设备数据</button>
+              <button data-view="alarms" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">告警处置</button>
+              <button data-view="exchange" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">交换记录</button>
+              <button data-view="dictionary" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">数据字典</button>
+            </nav>
+          </div>
+
+          <div class="mt-4 rounded-xl border bg-white p-4 space-y-3">
+            <div class="text-sm font-medium">连接平台</div>
+            <div class="space-y-2">
+              <label class="block text-xs text-slate-500">appkey</label>
+              <input id="appkeyInput" class="w-full rounded-lg border px-3 py-2 text-sm" value="DEMO_APP" />
+              <div class="flex gap-2">
+                <button id="btnConnect" class="flex-1 rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700">
+                  获取 token
+                </button>
+                <button id="btnDisconnect" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">
+                  退出
+                </button>
+              </div>
+              <div class="text-xs text-slate-500 break-all">
+                token：<span id="tokenPreview">-</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <section class="col-span-12 md:col-span-9 lg:col-span-10 space-y-4">
+          <div id="errorBox" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"></div>
+
+          <div id="view-overview" class="view space-y-4">
+            <div class="rounded-xl border bg-white p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-base font-semibold">平台概览</div>
+                  <div class="text-sm text-slate-500">基于 `/admin/api/*` 与 `/exchange/*` 接口汇总展示</div>
+                </div>
+                <button id="btnRefreshOverview" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">刷新</button>
+              </div>
+              <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3" id="summaryCards"></div>
+            </div>
+          </div>
+
+          <div id="view-devices" class="view hidden space-y-4">
+            <div class="rounded-xl border bg-white p-4 space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <div class="text-base font-semibold">设备列表</div>
+                  <div class="text-sm text-slate-500">查询接口：`GET /admin/api/devices`</div>
+                </div>
+                <div class="flex gap-2">
+                  <input id="deviceQuery" class="rounded-lg border px-3 py-2 text-sm" placeholder="设备名称/编码关键字" />
+                  <button id="btnSearchDevices" class="rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700">查询</button>
+                </div>
+              </div>
+              <div class="overflow-auto border rounded-lg">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th class="text-left px-3 py-2">设备编码</th>
+                      <th class="text-left px-3 py-2">设备名称</th>
+                      <th class="text-left px-3 py-2">类型</th>
+                      <th class="text-left px-3 py-2">位置</th>
+                      <th class="text-left px-3 py-2">更新时间</th>
+                      <th class="text-left px-3 py-2">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="devicesTbody" class="divide-y"></tbody>
+                </table>
+              </div>
+              <div class="flex items-center justify-between text-sm text-slate-600">
+                <div id="devicesPager"></div>
+                <div class="flex gap-2">
+                  <button id="btnPrevDevices" class="rounded bg-slate-100 px-3 py-1 hover:bg-slate-200">上一页</button>
+                  <button id="btnNextDevices" class="rounded bg-slate-100 px-3 py-1 hover:bg-slate-200">下一页</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="view-deviceData" class="view hidden space-y-4">
+            <div class="rounded-xl border bg-white p-4 space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <div class="text-base font-semibold">设备数据</div>
+                  <div class="text-sm text-slate-500">查询接口：`GET /admin/api/device-data`</div>
+                </div>
+                <div class="flex gap-2 items-center">
+                  <input id="dataDeviceCode" class="rounded-lg border px-3 py-2 text-sm w-72" placeholder="deviceCode（可从设备列表一键跳转）" />
+                  <button id="btnLoadDeviceData" class="rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700">加载</button>
+                </div>
+              </div>
+              <div class="overflow-auto border rounded-lg">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th class="text-left px-3 py-2">时间</th>
+                      <th class="text-left px-3 py-2">messageType</th>
+                      <th class="text-left px-3 py-2">reportTime</th>
+                      <th class="text-left px-3 py-2">内容（截断）</th>
+                    </tr>
+                  </thead>
+                  <tbody id="deviceDataTbody" class="divide-y"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="view-alarms" class="view hidden space-y-4">
+            <div class="rounded-xl border bg-white p-4 space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <div class="text-base font-semibold">告警处置</div>
+                  <div class="text-sm text-slate-500">查询接口：`GET /admin/api/alarm-deals`</div>
+                </div>
+                <button id="btnLoadAlarms" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">刷新</button>
+              </div>
+              <div class="overflow-auto border rounded-lg">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th class="text-left px-3 py-2">时间</th>
+                      <th class="text-left px-3 py-2">设备编码</th>
+                      <th class="text-left px-3 py-2">告警</th>
+                      <th class="text-left px-3 py-2">状态</th>
+                      <th class="text-left px-3 py-2">处理人</th>
+                      <th class="text-left px-3 py-2">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alarmsTbody" class="divide-y"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="view-exchange" class="view hidden space-y-4">
+            <div class="rounded-xl border bg-white p-4 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-base font-semibold">交换记录</div>
+                  <div class="text-sm text-slate-500">MQ：`GET /exchange/mq/history`，中间库：`GET /exchange/middle/pull`</div>
+                </div>
+                <button id="btnLoadExchange" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">刷新</button>
+              </div>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="border rounded-lg overflow-auto">
+                  <div class="bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">消息队列（最近 200 条）</div>
+                  <pre id="mqHistoryPre" class="p-3 text-xs whitespace-pre-wrap"></pre>
+                </div>
+                <div class="border rounded-lg overflow-auto">
+                  <div class="bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">中间库交换</div>
+                  <pre id="middleExchangePre" class="p-3 text-xs whitespace-pre-wrap"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="view-dictionary" class="view hidden space-y-4">
+            <div class="rounded-xl border bg-white p-4 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-base font-semibold">数据字典</div>
+                  <div class="text-sm text-slate-500">接口：`GET /data/dictionary`</div>
+                </div>
+                <button id="btnLoadDictionary" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">刷新</button>
+              </div>
+              <pre id="dictionaryPre" class="border rounded-lg bg-slate-50 p-3 text-xs whitespace-pre-wrap"></pre>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
+

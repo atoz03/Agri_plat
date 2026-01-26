@@ -1,1 +1,16 @@
 *.md
+.serena/
+.venv/
+!README.md
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 运行期数据（示例 JSON 可提交，其余忽略）
+data/demo.db
+data/keys/
+data/exchange/
+data/mosquitto/
+data/mosquitto-log/
+data/sftp/
+data/ftps/
