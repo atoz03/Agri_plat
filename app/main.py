@@ -17,6 +17,11 @@ ui_dir = Path(__file__).resolve().parent / "static" / "ui"
 if ui_dir.exists():
     app.mount("/ui", StaticFiles(directory=str(ui_dir), html=True), name="ui")
 
+# 文件 HTTP 服务/共享访问（标准 9.2.5/9.2.6 演示）：只读挂载交换目录
+exchange_dir = settings.data_dir / "exchange"
+exchange_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/exchange/files", StaticFiles(directory=str(exchange_dir), html=False), name="exchange_files")
+
 
 @app.get("/", include_in_schema=False)
 def root():
@@ -68,3 +73,9 @@ app.include_router(address.router)
 app.include_router(exchange.router)
 app.include_router(data_dictionary.router)
 app.include_router(admin.router)
+
+# 标准 URL 兼容：/uip-wgateway/iot/{uri}
+app.include_router(auth.router, prefix="/uip-wgateway/iot", include_in_schema=False)
+app.include_router(device.router, prefix="/uip-wgateway/iot", include_in_schema=False)
+app.include_router(alarm.router, prefix="/uip-wgateway/iot", include_in_schema=False)
+app.include_router(address.router, prefix="/uip-wgateway/iot", include_in_schema=False)

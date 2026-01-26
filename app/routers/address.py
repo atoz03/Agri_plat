@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from ..schemas import CommonRequest
 from ..deps import get_db, decrypt_common_payload
 from ..services.validation import parse_where
+from ..services.std_validation import validate_search_addr_where
 from ..config import settings
 
 
@@ -20,6 +21,7 @@ def search_address(
 ):
     payload = json.loads(decrypted.decode("utf-8"))
     where = parse_where(payload.get("where", []))
+    validate_search_addr_where(where)
     catalog_path = settings.data_dir / "address_catalog.json"
     items = json.loads(catalog_path.read_text(encoding="utf-8")) if catalog_path.exists() else []
     def match(item):

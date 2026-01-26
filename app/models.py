@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, Integer, DateTime, Text, Float
+from sqlalchemy import String, Integer, DateTime, Text, Index
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
 
@@ -32,6 +32,12 @@ class IdempotencyRecord(Base):
 
 class Device(Base):
     __tablename__ = "devices"
+    __table_args__ = (
+        Index("ix_devices_province", "provinceName"),
+        Index("ix_devices_city", "cityName"),
+        Index("ix_devices_farm", "farmName"),
+        Index("ix_devices_updated_at", "updated_at"),
+    )
 
     deviceCode: Mapped[str] = mapped_column(String(32), primary_key=True)
     deviceName: Mapped[str] = mapped_column(String(128))
@@ -70,11 +76,18 @@ class Device(Base):
     scene2: Mapped[str] = mapped_column(String(16))
     scene3: Mapped[str] = mapped_column(String(16))
     unifiedAddressCode: Mapped[str] = mapped_column(String(64))
+    last_report_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_message_type: Mapped[int | None] = mapped_column(Integer, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class DeviceData(Base):
     __tablename__ = "device_data"
+    __table_args__ = (
+        Index("ix_device_data_created_at", "created_at"),
+        Index("ix_device_data_device_created_at", "deviceCode", "created_at"),
+        Index("ix_device_data_message_type", "messageType"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     deviceCode: Mapped[str] = mapped_column(String(32))
@@ -86,6 +99,10 @@ class DeviceData(Base):
 
 class AlarmDeal(Base):
     __tablename__ = "alarm_deals"
+    __table_args__ = (
+        Index("ix_alarm_deals_created_at", "created_at"),
+        Index("ix_alarm_deals_device", "deviceCode"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     deviceCode: Mapped[str] = mapped_column(String(32))
@@ -102,6 +119,7 @@ class AlarmDeal(Base):
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
+    __table_args__ = (Index("ix_audit_logs_created_at", "created_at"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     event_type: Mapped[str] = mapped_column(String(64))
@@ -112,6 +130,7 @@ class AuditLog(Base):
 
 class FileExchangeRecord(Base):
     __tablename__ = "file_exchange"
+    __table_args__ = (Index("ix_file_exchange_received_at", "received_at"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     filename: Mapped[str] = mapped_column(String(256))
@@ -124,6 +143,7 @@ class FileExchangeRecord(Base):
 
 class MiddleExchangeRecord(Base):
     __tablename__ = "middle_exchange"
+    __table_args__ = (Index("ix_middle_exchange_created_at", "created_at"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     table_name: Mapped[str] = mapped_column(String(128))
@@ -133,6 +153,7 @@ class MiddleExchangeRecord(Base):
 
 class MessageQueueRecord(Base):
     __tablename__ = "message_queue_records"
+    __table_args__ = (Index("ix_mq_records_published_at", "published_at"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     topic: Mapped[str] = mapped_column(String(128))

@@ -5,6 +5,7 @@ from ..schemas import CommonRequest, CommonResponse, AlarmDealPayload
 from ..deps import get_db, decrypt_common_payload
 from .. import models
 from ..utils.audit import write_audit
+from ..services.std_validation import validate_alarm_deal
 
 
 router = APIRouter()
@@ -18,6 +19,7 @@ def alarm_deal_sync(
     db: Session = Depends(get_db),
 ):
     payload = AlarmDealPayload.model_validate_json(decrypted)
+    validate_alarm_deal(payload.model_dump())
     record = models.AlarmDeal(
         deviceCode=payload.deviceCode,
         alarmCode=payload.alarmCode,

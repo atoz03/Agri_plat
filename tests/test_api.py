@@ -21,6 +21,10 @@ def test_token_and_device_sync_and_admin_views():
         assert data["code"] == "200"
         token = data["token"]
         sm4_key = rsa_decrypt_sm4_key(token)
+
+        # 标准 URL 兼容：/uip-wgateway/iot/{uri}
+        resp = client.post("/uip-wgateway/iot/api/sp-token", json={"appkey": "DEMO_APP"})
+        assert resp.json()["code"] == "200"
         device_payload = {
             "deviceName": "气象站1号",
             "deviceCode": "00000001000000000502",
@@ -49,13 +53,32 @@ def test_token_and_device_sync_and_admin_views():
         resp = client.post("/api/device/deviceSync", json=common, headers={"token": token, "appkey": "DEMO_APP"})
         assert resp.json()["resultCode"] == "200"
 
+        resp = client.post(
+            "/uip-wgateway/iot/api/device/deviceSync",
+            json=_common(device_payload, sm4_key=sm4_key, appsecret="DEMO_SECRET"),
+            headers={"token": token, "appkey": "DEMO_APP"},
+        )
+        assert resp.json()["resultCode"] == "200"
+
         data_payload = {
             "deviceCode": device_payload["deviceCode"],
             "messageType": 1,
             "reportTime": "2026-01-26 00:00:00",
             "content": [
-                {"topic": "air_temperature", "name": "空气温度", "updateValue": "12.3", "unit": "℃"},
-                {"topic": "air_humidity", "name": "空气湿度", "updateValue": "45.6", "unit": "%"},
+                {
+                    "topic": "Daily minimum air temperature (Tmin)",
+                    "name": "每日最低温度",
+                    "dataType": 6,
+                    "updateValue": "12.3",
+                    "unit": "°C",
+                },
+                {
+                    "topic": "Daily precipitation",
+                    "name": "每日降雨量",
+                    "dataType": 6,
+                    "updateValue": "0.5",
+                    "unit": "mm",
+                },
             ],
         }
         resp = client.post(

@@ -2,6 +2,7 @@ import io
 import json
 from datetime import datetime
 from fastapi import APIRouter, Depends, File, UploadFile, Query
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 import pandas as pd
 import pika
@@ -31,6 +32,34 @@ def file_download(file_id: int, db: Session = Depends(get_db)):
     if not record:
         return {"resultCode": "404", "msg": "文件不存在"}
     return {"resultCode": "200", "msg": "成功", "path": record.path, "checksum": record.checksum}
+
+
+@router.get("/exchange/file/{file_id}/download")
+def file_download_stream(file_id: int, db: Session = Depends(get_db)):
+    """
+    文件拉取服务：直接返回文件内容（对应标准 9.2.4）。
+    """
+    record = db.query(models.FileExchangeRecord).filter_by(id=file_id).first()
+    if not record:
+        return {"resultCode": "404", "msg": "文件不存在"}
+    return FileResponse(record.path, filename=record.filename)
+
+
+@router.get("/exchange/file/list")
+def file_list(limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db)):
+    records = db.query(models.FileExchangeRecord).order_by(models.FileExchangeRecord.received_at.desc()).limit(limit).all()
+    items = [
+        {
+            "id": r.id,
+            "filename": r.filename,
+            "checksum": r.checksum,
+            "size": r.size,
+            "source": r.source,
+            "received_at": r.received_at.isoformat(),
+        }
+        for r in records
+    ]
+    return {"resultCode": "200", "msg": "成功", "items": items}
 
 
 @router.post("/exchange/middle/push")
