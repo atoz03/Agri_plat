@@ -3,207 +3,314 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>农业物联网接入平台 - 演示看板</title>
+    <title>农业物联网接入平台 - 管理控制台</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      /* 自定义滚动条 */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: #f1f5f9; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      
+      /* JSON 语法高亮样式 */
+      .json-key { color: #881391; }
+      .json-string { color: #c41a16; }
+      .json-number { color: #1c00cf; }
+      .json-boolean { color: #0000ff; }
+      .json-null { color: #808080; }
+      
+      /* 加载遮罩层 */
+      .loading-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255, 255, 255, 0.7);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 50;
+        backdrop-filter: blur(2px);
+      }
+    </style>
   </head>
-  <body class="bg-slate-50 text-slate-900">
-    <div class="min-h-screen">
-      <header class="border-b bg-white">
-        <div class="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
+  <body class="bg-slate-50 text-slate-900 font-sans">
+    
+    <!-- 全局 Loading -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="animate-spin rounded-full h-10 w-10 border-4 border-emerald-500 border-t-transparent"></div>
+    </div>
+
+    <div class="min-h-screen flex flex-col">
+      <!-- 顶部导航栏 -->
+      <header class="border-b bg-white shadow-sm sticky top-0 z-40">
+        <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-lg bg-emerald-600"></div>
+            <div class="h-8 w-8 rounded bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-emerald-200 shadow-lg">
+               <i class="fa-solid fa-seedling"></i>
+            </div>
             <div>
-              <div class="text-lg font-semibold">农业物联网大田环境感知数据接入平台</div>
-              <div class="text-sm text-slate-500">演示前端（无需构建，静态页面）</div>
+              <div class="text-base font-bold text-slate-800 leading-tight">农业物联网接入平台</div>
+              <div class="text-xs text-slate-500">管理控制台</div>
             </div>
           </div>
-          <div class="text-sm text-slate-600">
-            <span id="connStatus" class="px-2 py-1 rounded bg-slate-100">未连接</span>
+          <div class="flex items-center gap-3">
+             <div class="text-xs text-slate-500 hidden sm:block">
+                <i class="fa-solid fa-clock mr-1"></i><span id="sysTime">-</span>
+             </div>
+             <span id="connStatus" class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200 transition-colors">
+               <i class="fa-solid fa-link-slash mr-1"></i>未连接
+             </span>
           </div>
         </div>
       </header>
 
-      <main class="mx-auto max-w-7xl px-4 py-6 grid grid-cols-12 gap-4">
-        <aside class="col-span-12 md:col-span-3 lg:col-span-2">
-          <div class="rounded-xl border bg-white p-4 space-y-3">
-            <div class="text-sm font-medium">导航</div>
-            <nav class="space-y-2">
-              <button data-view="overview" class="nav-btn w-full text-left px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700">概览</button>
-              <button data-view="devices" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">设备</button>
-              <button data-view="deviceData" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">设备数据</button>
-              <button data-view="alarms" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">告警处置</button>
-              <button data-view="exchange" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">交换记录</button>
-              <button data-view="dictionary" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">数据字典</button>
+      <main class="mx-auto max-w-7xl w-full px-4 py-6 grid grid-cols-12 gap-6 flex-grow">
+        <!-- 左侧侧边栏 -->
+        <aside class="col-span-12 md:col-span-3 lg:col-span-2 space-y-4">
+          <!-- 菜单 -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              系统菜单
+            </div>
+            <nav class="p-2 space-y-1">
+              <button data-view="overview" class="nav-btn group flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                <i class="fa-solid fa-gauge-high w-6 text-center text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+                概览仪表盘
+              </button>
+              <button data-view="devices" class="nav-btn group flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                <i class="fa-solid fa-microchip w-6 text-center text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+                设备列表
+              </button>
+              <button data-view="deviceData" class="nav-btn group flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                <i class="fa-solid fa-database w-6 text-center text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+                设备数据
+              </button>
+              <button data-view="alarms" class="nav-btn group flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                <i class="fa-solid fa-bell w-6 text-center text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+                告警处置
+              </button>
+              <button data-view="exchange" class="nav-btn group flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                <i class="fa-solid fa-right-left w-6 text-center text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+                交换记录
+              </button>
+              <button data-view="dictionary" class="nav-btn group flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                <i class="fa-solid fa-book w-6 text-center text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+                数据字典
+              </button>
             </nav>
-            <div class="pt-3 border-t">
-              <a href="/ui/bigscreen" class="block w-full text-left px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700">
-                打开绿色大屏
+            <div class="p-2 border-t border-slate-100">
+               <a href="/ui/bigscreen" target="_blank" class="flex items-center justify-center w-full px-3 py-2 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-200">
+                <i class="fa-solid fa-tv mr-2"></i>打开绿色大屏
               </a>
             </div>
           </div>
 
-          <div class="mt-4 rounded-xl border bg-white p-4 space-y-3">
-            <div class="text-sm font-medium">连接平台</div>
-            <div class="space-y-2">
-              <label class="block text-xs text-slate-500">appkey</label>
-              <input id="appkeyInput" class="w-full rounded-lg border px-3 py-2 text-sm" value="DEMO_APP" />
+          <!-- 连接配置卡片 -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+             <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              连接配置
+            </div>
+            <div class="p-4 space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">AppKey</label>
+                <input id="appkeyInput" class="w-full rounded border-slate-300 px-3 py-1.5 text-sm focus:ring-emerald-500 focus:border-emerald-500" value="DEMO_APP" />
+              </div>
               <div class="flex gap-2">
-                <button id="btnConnect" class="flex-1 rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700">
-                  获取 token
+                <button id="btnConnect" class="flex-1 rounded bg-emerald-600 text-white px-3 py-1.5 text-xs font-medium hover:bg-emerald-700 shadow-sm transition-colors">
+                  <i class="fa-solid fa-plug mr-1"></i>连接
                 </button>
-                <button id="btnDisconnect" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">
-                  退出
+                <button id="btnDisconnect" class="rounded bg-slate-100 text-slate-600 px-3 py-1.5 text-xs font-medium hover:bg-slate-200 border border-slate-200 transition-colors">
+                  断开
                 </button>
               </div>
-              <div class="text-xs text-slate-500 break-all">
-                token：<span id="tokenPreview">-</span>
+              <div class="text-[10px] text-slate-400 truncate font-mono" title="Token">
+                Token: <span id="tokenPreview">-</span>
               </div>
             </div>
           </div>
         </aside>
 
+        <!-- 主内容区 -->
         <section class="col-span-12 md:col-span-9 lg:col-span-10 space-y-4">
-          <div id="errorBox" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"></div>
+          <!-- 错误提示框 -->
+          <div id="errorBox" class="hidden rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 flex items-start gap-2 animate-pulse">
+             <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+             <span id="errorMsg"></span>
+          </div>
 
-          <div id="view-overview" class="view space-y-4">
-            <div class="rounded-xl border bg-white p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-base font-semibold">平台概览</div>
-                  <div class="text-sm text-slate-500">基于 `/admin/api/*` 与 `/exchange/*` 接口汇总展示</div>
-                </div>
-                <button id="btnRefreshOverview" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">刷新</button>
-              </div>
-              <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3" id="summaryCards"></div>
+          <!-- 视图 1: 概览 (Overview) -->
+          <div id="view-overview" class="view space-y-6">
+            <!-- 统计卡片区 -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="summaryCards">
+              <!-- JS 动态注入内容 -->
+            </div>
+
+            <!-- 图表区 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+               <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+                  <div class="flex items-center justify-between mb-4">
+                     <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                       <i class="fa-solid fa-chart-line text-emerald-500"></i> 数据上报趋势 (Mock)
+                     </h3>
+                  </div>
+                  <div id="chartDataTrend" class="h-64 w-full"></div>
+               </div>
+               <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+                  <div class="flex items-center justify-between mb-4">
+                     <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                       <i class="fa-solid fa-chart-pie text-emerald-500"></i> 数据分布预览 (Mock)
+                     </h3>
+                  </div>
+                   <div id="chartDist" class="h-64 w-full"></div>
+               </div>
             </div>
           </div>
 
+          <!-- 视图 2: 设备列表 (Devices) -->
           <div id="view-devices" class="view hidden space-y-4">
-            <div class="rounded-xl border bg-white p-4 space-y-3">
-              <div class="flex items-center justify-between gap-2">
-                <div>
-                  <div class="text-base font-semibold">设备列表</div>
-                  <div class="text-sm text-slate-500">查询接口：`GET /admin/api/devices`</div>
-                </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100">
+              <div class="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <h2 class="font-bold text-slate-700 flex items-center gap-2">
+                  <i class="fa-solid fa-list text-emerald-500"></i> 设备列表
+                </h2>
                 <div class="flex gap-2">
-                  <input id="deviceQuery" class="rounded-lg border px-3 py-2 text-sm" placeholder="设备名称/编码关键字" />
-                  <button id="btnSearchDevices" class="rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700">查询</button>
+                  <input id="deviceQuery" class="rounded border-slate-300 px-3 py-1.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 w-full md:w-64" placeholder="搜索设备名称/编码..." />
+                  <button id="btnSearchDevices" class="rounded bg-emerald-600 text-white px-3 py-1.5 text-sm hover:bg-emerald-700 shadow-sm">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                  </button>
                 </div>
               </div>
-              <div class="overflow-auto border rounded-lg">
-                <table class="min-w-full text-sm">
-                  <thead class="bg-slate-50 text-slate-600">
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                  <thead class="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
                     <tr>
-                      <th class="text-left px-3 py-2">设备编码</th>
-                      <th class="text-left px-3 py-2">设备名称</th>
-                      <th class="text-left px-3 py-2">类型</th>
-                      <th class="text-left px-3 py-2">位置</th>
-                      <th class="text-left px-3 py-2">更新时间</th>
-                      <th class="text-left px-3 py-2">操作</th>
+                      <th class="px-5 py-3">设备编码</th>
+                      <th class="px-5 py-3">名称</th>
+                      <th class="px-5 py-3">类型</th>
+                      <th class="px-5 py-3">位置</th>
+                      <th class="px-5 py-3">更新时间</th>
+                      <th class="px-5 py-3 text-right">操作</th>
                     </tr>
                   </thead>
-                  <tbody id="devicesTbody" class="divide-y"></tbody>
+                  <tbody id="devicesTbody" class="divide-y divide-slate-100 text-slate-600"></tbody>
                 </table>
               </div>
-              <div class="flex items-center justify-between text-sm text-slate-600">
-                <div id="devicesPager"></div>
-                <div class="flex gap-2">
-                  <button id="btnPrevDevices" class="rounded bg-slate-100 px-3 py-1 hover:bg-slate-200">上一页</button>
-                  <button id="btnNextDevices" class="rounded bg-slate-100 px-3 py-1 hover:bg-slate-200">下一页</button>
-                </div>
+              <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50 rounded-b-xl">
+                 <div id="devicesPager" class="text-xs text-slate-500"></div>
+                 <div class="flex gap-2">
+                    <button id="btnPrevDevices" class="px-3 py-1 rounded bg-white border border-slate-200 text-xs font-medium hover:bg-slate-50 hover:text-emerald-600 disabled:opacity-50 transition-colors">上一页</button>
+                    <button id="btnNextDevices" class="px-3 py-1 rounded bg-white border border-slate-200 text-xs font-medium hover:bg-slate-50 hover:text-emerald-600 disabled:opacity-50 transition-colors">下一页</button>
+                 </div>
               </div>
             </div>
           </div>
 
+          <!-- 视图 3: 设备数据 (Device Data) -->
           <div id="view-deviceData" class="view hidden space-y-4">
-            <div class="rounded-xl border bg-white p-4 space-y-3">
-              <div class="flex items-center justify-between gap-2">
-                <div>
-                  <div class="text-base font-semibold">设备数据</div>
-                  <div class="text-sm text-slate-500">查询接口：`GET /admin/api/device-data`</div>
-                </div>
+             <div class="bg-white rounded-xl shadow-sm border border-slate-100">
+              <div class="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <h2 class="font-bold text-slate-700 flex items-center gap-2">
+                  <i class="fa-solid fa-wave-square text-emerald-500"></i> 设备数据
+                </h2>
                 <div class="flex gap-2 items-center">
-                  <input id="dataDeviceCode" class="rounded-lg border px-3 py-2 text-sm w-72" placeholder="deviceCode（可从设备列表一键跳转）" />
-                  <button id="btnLoadDeviceData" class="rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700">加载</button>
+                  <input id="dataDeviceCode" class="w-full md:w-72 rounded border-slate-300 px-3 py-1.5 text-sm focus:ring-emerald-500 focus:border-emerald-500" placeholder="请输入设备编码" />
+                  <button id="btnLoadDeviceData" class="rounded bg-emerald-600 text-white px-3 py-1.5 text-sm hover:bg-emerald-700 shadow-sm">加载</button>
                 </div>
               </div>
-              <div class="overflow-auto border rounded-lg">
-                <table class="min-w-full text-sm">
-                  <thead class="bg-slate-50 text-slate-600">
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                  <thead class="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
                     <tr>
-                      <th class="text-left px-3 py-2">时间</th>
-                      <th class="text-left px-3 py-2">messageType</th>
-                      <th class="text-left px-3 py-2">reportTime</th>
-                      <th class="text-left px-3 py-2">内容（截断）</th>
+                      <th class="px-5 py-3 w-44">时间</th>
+                      <th class="px-5 py-3 w-32">类型</th>
+                      <th class="px-5 py-3">数据内容</th>
                     </tr>
                   </thead>
-                  <tbody id="deviceDataTbody" class="divide-y"></tbody>
+                  <tbody id="deviceDataTbody" class="divide-y divide-slate-100 text-slate-600"></tbody>
                 </table>
               </div>
             </div>
           </div>
 
+          <!-- 视图 4: 告警 (Alarms) -->
           <div id="view-alarms" class="view hidden space-y-4">
-            <div class="rounded-xl border bg-white p-4 space-y-3">
-              <div class="flex items-center justify-between gap-2">
-                <div>
-                  <div class="text-base font-semibold">告警处置</div>
-                  <div class="text-sm text-slate-500">查询接口：`GET /admin/api/alarm-deals`</div>
-                </div>
-                <button id="btnLoadAlarms" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">刷新</button>
+             <div class="bg-white rounded-xl shadow-sm border border-slate-100">
+              <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="font-bold text-slate-700 flex items-center gap-2">
+                  <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> 告警处置
+                </h2>
+                <button id="btnLoadAlarms" class="rounded border border-slate-200 px-3 py-1.5 text-xs font-medium hover:bg-slate-50 text-slate-600 transition-colors">
+                  <i class="fa-solid fa-rotate-right mr-1"></i>刷新
+                </button>
               </div>
-              <div class="overflow-auto border rounded-lg">
-                <table class="min-w-full text-sm">
-                  <thead class="bg-slate-50 text-slate-600">
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                  <thead class="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
                     <tr>
-                      <th class="text-left px-3 py-2">时间</th>
-                      <th class="text-left px-3 py-2">设备编码</th>
-                      <th class="text-left px-3 py-2">告警</th>
-                      <th class="text-left px-3 py-2">状态</th>
-                      <th class="text-left px-3 py-2">处理人</th>
-                      <th class="text-left px-3 py-2">说明</th>
+                      <th class="px-5 py-3">时间</th>
+                      <th class="px-5 py-3">设备</th>
+                      <th class="px-5 py-3">告警名称</th>
+                      <th class="px-5 py-3">状态</th>
+                      <th class="px-5 py-3">处理人</th>
+                      <th class="px-5 py-3">说明</th>
                     </tr>
                   </thead>
-                  <tbody id="alarmsTbody" class="divide-y"></tbody>
+                  <tbody id="alarmsTbody" class="divide-y divide-slate-100 text-slate-600"></tbody>
                 </table>
               </div>
             </div>
           </div>
 
+          <!-- 视图 5: 交换记录 (Exchange) -->
           <div id="view-exchange" class="view hidden space-y-4">
-            <div class="rounded-xl border bg-white p-4 space-y-3">
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-base font-semibold">交换记录</div>
-                  <div class="text-sm text-slate-500">MQ：`GET /exchange/mq/history`，中间库：`GET /exchange/middle/pull`</div>
-                </div>
-                <button id="btnLoadExchange" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">刷新</button>
-              </div>
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div class="border rounded-lg overflow-auto">
-                  <div class="bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">消息队列（最近 200 条）</div>
-                  <pre id="mqHistoryPre" class="p-3 text-xs whitespace-pre-wrap"></pre>
-                </div>
-                <div class="border rounded-lg overflow-auto">
-                  <div class="bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">中间库交换</div>
-                  <pre id="middleExchangePre" class="p-3 text-xs whitespace-pre-wrap"></pre>
-                </div>
-              </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+               <div class="flex items-center justify-between mb-4">
+                  <h2 class="font-bold text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-server text-blue-500"></i> 数据交换监控
+                  </h2>
+                  <button id="btnLoadExchange" class="rounded border border-slate-200 px-3 py-1.5 text-xs font-medium hover:bg-slate-50 text-slate-600 transition-colors">
+                    <i class="fa-solid fa-rotate-right mr-1"></i>刷新
+                  </button>
+               </div>
+               <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <!-- MQ 记录 -->
+                  <div class="border rounded-lg flex flex-col h-[500px] shadow-sm overflow-hidden">
+                     <div class="bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600 border-b flex justify-between items-center">
+                        <span class="flex items-center gap-2"><i class="fa-brands fa-envira text-emerald-600"></i> MQ 历史消息</span>
+                        <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px]">Active</span>
+                     </div>
+                     <div class="flex-grow overflow-auto bg-[#1e1e1e] text-slate-300 p-4 text-xs font-mono" id="mqHistoryContainer">
+                        <!-- JSON Content -->
+                     </div>
+                  </div>
+                  <!-- 中间库记录 -->
+                  <div class="border rounded-lg flex flex-col h-[500px] shadow-sm overflow-hidden">
+                     <div class="bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600 border-b flex justify-between items-center">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-database text-indigo-600"></i> 中间库同步</span>
+                        <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px]">Sync</span>
+                     </div>
+                     <div class="flex-grow overflow-auto bg-[#1e1e1e] text-slate-300 p-4 text-xs font-mono" id="middleExchangeContainer">
+                         <!-- JSON Content -->
+                     </div>
+                  </div>
+               </div>
             </div>
           </div>
 
+          <!-- 视图 6: 数据字典 (Dictionary) -->
           <div id="view-dictionary" class="view hidden space-y-4">
-            <div class="rounded-xl border bg-white p-4 space-y-3">
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-base font-semibold">数据字典</div>
-                  <div class="text-sm text-slate-500">接口：`GET /data/dictionary`</div>
-                </div>
-                <button id="btnLoadDictionary" class="rounded-lg bg-slate-100 px-3 py-2 text-sm hover:bg-slate-200">刷新</button>
-              </div>
-              <pre id="dictionaryPre" class="border rounded-lg bg-slate-50 p-3 text-xs whitespace-pre-wrap"></pre>
+             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+               <div class="flex items-center justify-between mb-4">
+                  <h2 class="font-bold text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-amber-500"></i> 数据字典
+                  </h2>
+                  <button id="btnLoadDictionary" class="rounded border border-slate-200 px-3 py-1.5 text-xs font-medium hover:bg-slate-50 text-slate-600 transition-colors">
+                    <i class="fa-solid fa-rotate-right mr-1"></i>刷新
+                  </button>
+               </div>
+               <div class="border rounded-lg overflow-auto bg-[#1e1e1e] p-4 max-h-[600px] font-mono text-xs text-slate-300 shadow-inner" id="dictionaryContainer">
+               </div>
             </div>
           </div>
+
         </section>
       </main>
     </div>

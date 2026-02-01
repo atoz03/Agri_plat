@@ -6,123 +6,220 @@
     <title>农业物联网接入平台 - 绿色大屏</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
       :root {
-        --bg: #08130c;
-        --panel: rgba(8, 30, 18, 0.72);
-        --border: rgba(34, 197, 94, 0.25);
+        --bg: #050b07;
+        --panel: rgba(6, 20, 12, 0.65);
+        --border: rgba(34, 197, 94, 0.3);
         --accent: #22c55e;
-        --accent2: #16a34a;
-        --text: rgba(226, 255, 238, 0.92);
-        --muted: rgba(226, 255, 238, 0.55);
+        --accent-glow: rgba(34, 197, 94, 0.6);
+        --text: rgba(226, 255, 238, 0.95);
+        --muted: rgba(226, 255, 238, 0.5);
       }
-      body { background: radial-gradient(1200px 700px at 20% 10%, rgba(34,197,94,.18), transparent 60%),
-                      radial-gradient(900px 600px at 85% 25%, rgba(16,185,129,.12), transparent 60%),
-                      radial-gradient(900px 700px at 55% 95%, rgba(34,197,94,.10), transparent 60%),
-                      var(--bg); color: var(--text); }
-      .panel { background: var(--panel); border: 1px solid var(--border); box-shadow: 0 0 0 1px rgba(34,197,94,.06) inset; }
-      .gridline { background-image: linear-gradient(rgba(34,197,94,.06) 1px, transparent 1px),
-                                 linear-gradient(90deg, rgba(34,197,94,.06) 1px, transparent 1px);
-                  background-size: 32px 32px; }
-      .glow { text-shadow: 0 0 18px rgba(34,197,94,.28); }
+      body { 
+        background-color: var(--bg);
+        background-image: 
+            radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%),
+            linear-gradient(rgba(16, 185, 129, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(16, 185, 129, 0.02) 1px, transparent 1px);
+        background-size: 100% 100%, 40px 40px, 40px 40px;
+        color: var(--text); 
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      
+      /* Panel Design */
+      .panel { 
+        background: var(--panel); 
+        border: 1px solid var(--border); 
+        position: relative;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 0 15px rgba(0,0,0,0.3) inset;
+      }
+      
+      /* Corner Accents */
+      .panel::before, .panel::after, 
+      .panel-inner::before, .panel-inner::after {
+        content: ''; position: absolute; width: 10px; height: 10px;
+        border-color: var(--accent); border-style: solid; transition: all 0.3s;
+      }
+      .panel::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+      .panel::after { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+      .panel-inner { position: absolute; inset: 0; pointer-events: none; }
+      .panel-inner::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+      .panel-inner::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+      /* Glow Effects */
+      .glow-text { text-shadow: 0 0 8px var(--accent-glow); }
+      .glow-box { box-shadow: 0 0 15px rgba(34, 197, 94, 0.15) inset; }
+
       .scale-root { transform-origin: top left; }
+      
+      /* Custom Scrollbar for list */
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+      ::-webkit-scrollbar-thumb { background: rgba(34,197,94,0.3); border-radius: 2px; }
+      
+      /* Animation */
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+      }
+      .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
   </head>
-  <body class="overflow-hidden">
-    <div id="scaleRoot" class="scale-root w-[1920px] h-[1080px] gridline">
-      <header class="px-8 py-6 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <div class="h-10 w-10 rounded-xl bg-emerald-600"></div>
+  <body class="overflow-hidden m-0 p-0">
+    <div id="scaleRoot" class="scale-root w-[1920px] h-[1080px]">
+      
+      <!-- Header -->
+      <header class="px-8 py-5 flex items-center justify-between relative z-10">
+        <div class="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
+        
+        <div class="flex items-center gap-5">
+          <div class="h-12 w-12 rounded bg-emerald-600/20 border border-emerald-500/50 flex items-center justify-center glow-box">
+             <i class="fa-solid fa-leaf text-2xl text-emerald-400"></i>
+          </div>
           <div>
-            <div class="text-2xl font-semibold glow">农业物联网大田环境感知数据接入平台</div>
-            <div class="text-sm text-emerald-200/70">标准接入演示 · 绿色大屏 · 10 秒刷新</div>
+            <div class="text-3xl font-bold tracking-wider glow-text bg-clip-text text-transparent bg-gradient-to-r from-emerald-200 to-white">
+              农业物联网接入平台
+            </div>
+            <div class="text-sm text-emerald-300/60 font-mono tracking-widest uppercase mt-1">
+              Agricultural IoT Ingestion Platform
+            </div>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <div class="text-sm text-emerald-200/70">当前时间</div>
-          <div id="clock" class="font-mono text-lg"></div>
-          <div id="connBadge" class="px-3 py-1 rounded-lg bg-emerald-950/60 border border-emerald-500/20 text-sm">
-            未连接
+        
+        <div class="flex items-center gap-6">
+          <div class="text-right">
+            <div id="clock" class="font-mono text-2xl font-bold text-emerald-100/90 leading-none"></div>
+            <div id="date" class="text-xs text-emerald-400/60 mt-1 font-mono text-right"></div>
+          </div>
+          <div id="connBadge" class="px-4 py-1.5 rounded bg-emerald-950/80 border border-emerald-500/30 text-sm font-mono flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-slate-500"></span> 未连接
           </div>
         </div>
       </header>
 
-      <main class="px-8 pb-8 grid grid-cols-12 gap-5">
-        <section class="col-span-3 space-y-5">
-          <div class="panel rounded-2xl p-4">
-            <div class="flex items-center justify-between">
-              <div class="text-sm text-emerald-200/70">核心指标</div>
-              <button id="btnConnect" class="text-xs px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600">连接</button>
-            </div>
-            <div class="mt-3 grid grid-cols-2 gap-3">
-              <div class="rounded-xl p-3 bg-emerald-950/40 border border-emerald-500/10">
-                <div class="text-xs text-emerald-200/70">设备总数</div>
-                <div id="kpiDevices" class="mt-1 text-3xl font-semibold glow">-</div>
+      <!-- Main Layout -->
+      <main class="px-8 py-6 grid grid-cols-12 gap-6 h-[calc(1080px-100px)]">
+        
+        <!-- Left Column -->
+        <section class="col-span-3 flex flex-col gap-6">
+          <!-- KPI Panel -->
+          <div class="panel p-5 rounded">
+            <div class="panel-inner"></div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-base font-bold text-emerald-300 flex items-center gap-2">
+                 <i class="fa-solid fa-chart-simple"></i> 核心指标
               </div>
-              <div class="rounded-xl p-3 bg-emerald-950/40 border border-emerald-500/10">
-                <div class="text-xs text-emerald-200/70">在线 / 离线</div>
-                <div class="mt-1 text-2xl font-semibold glow">
-                  <span id="kpiOnline">-</span>
-                  <span class="text-emerald-200/50 mx-1">/</span>
-                  <span id="kpiOffline">-</span>
+              <button id="btnConnect" class="text-xs px-3 py-1 rounded bg-emerald-600/30 border border-emerald-500/30 hover:bg-emerald-600/50 hover:text-white transition-colors text-emerald-200">
+                <i class="fa-solid fa-plug mr-1"></i>连接
+              </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+               <!-- KPI Item -->
+               <div class="bg-emerald-900/20 border border-emerald-500/10 p-3 rounded hover:bg-emerald-900/30 transition-colors">
+                  <div class="text-xs text-emerald-400/70">设备总数</div>
+                  <div id="kpiDevices" class="text-2xl font-bold font-mono text-white mt-1 count-up">-</div>
+               </div>
+               <div class="bg-emerald-900/20 border border-emerald-500/10 p-3 rounded hover:bg-emerald-900/30 transition-colors">
+                  <div class="text-xs text-emerald-400/70">在线 / 离线</div>
+                  <div class="text-xl font-bold font-mono text-white mt-1">
+                     <span id="kpiOnline" class="text-emerald-400 count-up">-</span><span class="text-slate-500 mx-1">/</span><span id="kpiOffline" class="text-slate-400 count-up">-</span>
+                  </div>
+               </div>
+               <div class="bg-emerald-900/20 border border-emerald-500/10 p-3 rounded hover:bg-emerald-900/30 transition-colors">
+                  <div class="text-xs text-emerald-400/70">24h 数据量</div>
+                  <div id="kpiData24h" class="text-2xl font-bold font-mono text-white mt-1 count-up">-</div>
+               </div>
+               <div class="bg-emerald-900/20 border border-emerald-500/10 p-3 rounded hover:bg-emerald-900/30 transition-colors">
+                  <div class="text-xs text-emerald-400/70">1h 数据量</div>
+                  <div id="kpiData1h" class="text-2xl font-bold font-mono text-white mt-1 count-up">-</div>
+               </div>
+                <div class="col-span-2 bg-emerald-900/20 border border-emerald-500/10 p-3 rounded flex items-center justify-between hover:bg-emerald-900/30 transition-colors">
+                  <div>
+                    <div class="text-xs text-emerald-400/70">24h 告警处置</div>
+                    <div id="kpiAlarm24h" class="text-2xl font-bold font-mono text-white mt-1 count-up">-</div>
+                  </div>
+                  <div class="text-3xl text-emerald-500/20">
+                     <i class="fa-solid fa-bell-slash"></i>
+                  </div>
+               </div>
+            </div>
+            <div class="mt-4 text-[10px] text-emerald-500/40 font-mono text-right">
+               Last Update: <span id="kpiUpdatedAt">-</span>
+            </div>
+          </div>
+
+          <!-- Charts Left -->
+          <div class="panel p-5 rounded flex-1 flex flex-col">
+            <div class="panel-inner"></div>
+            <div class="text-base font-bold text-emerald-300 mb-2 flex items-center gap-2">
+               <i class="fa-solid fa-map-location-dot"></i> 省级分布 (Top 12)
+            </div>
+            <div id="provinceChart" class="flex-1 w-full"></div>
+          </div>
+          
+           <div class="panel p-5 rounded flex-1 flex flex-col">
+            <div class="panel-inner"></div>
+            <div class="text-base font-bold text-emerald-300 mb-2 flex items-center gap-2">
+               <i class="fa-solid fa-city"></i> 市级分布 (Top 12)
+            </div>
+            <div id="cityChart" class="flex-1 w-full"></div>
+          </div>
+        </section>
+
+        <!-- Center Column -->
+        <section class="col-span-6 flex flex-col gap-6">
+          <!-- Main Trend -->
+          <div class="panel p-5 rounded h-[45%] flex flex-col">
+             <div class="panel-inner"></div>
+             <div class="text-lg font-bold text-emerald-300 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-chart-area"></i> 24小时设备数据接入趋势
+             </div>
+             <div id="dataTrendChart" class="flex-1 w-full"></div>
+          </div>
+
+          <!-- Sub Charts -->
+          <div class="grid grid-cols-2 gap-6 h-[55%]">
+             <div class="panel p-5 rounded flex flex-col">
+                <div class="panel-inner"></div>
+                <div class="text-base font-bold text-emerald-300 mb-2 flex items-center gap-2">
+                   <i class="fa-solid fa-triangle-exclamation"></i> 告警时段分布
                 </div>
-              </div>
-              <div class="rounded-xl p-3 bg-emerald-950/40 border border-emerald-500/10">
-                <div class="text-xs text-emerald-200/70">近 24h 数据</div>
-                <div id="kpiData24h" class="mt-1 text-3xl font-semibold glow">-</div>
-              </div>
-              <div class="rounded-xl p-3 bg-emerald-950/40 border border-emerald-500/10">
-                <div class="text-xs text-emerald-200/70">近 1h 数据</div>
-                <div id="kpiData1h" class="mt-1 text-3xl font-semibold glow">-</div>
-              </div>
-              <div class="rounded-xl p-3 bg-emerald-950/40 border border-emerald-500/10">
-                <div class="text-xs text-emerald-200/70">近 24h 告警</div>
-                <div id="kpiAlarm24h" class="mt-1 text-3xl font-semibold glow">-</div>
-              </div>
-            </div>
-            <div class="mt-3 text-xs text-emerald-200/60">
-              更新时间：<span id="kpiUpdatedAt" class="font-mono">-</span>
-            </div>
-          </div>
-
-          <div class="panel rounded-2xl p-4">
-            <div class="text-sm text-emerald-200/70">省级分布（Top 12）</div>
-            <div id="provinceChart" class="h-[250px] mt-2"></div>
-          </div>
-
-          <div class="panel rounded-2xl p-4">
-            <div class="text-sm text-emerald-200/70">市级分布（Top 12）</div>
-            <div id="cityChart" class="h-[250px] mt-2"></div>
+                <div id="alarmTrendChart" class="flex-1 w-full"></div>
+             </div>
+             <div class="panel p-5 rounded flex flex-col">
+                <div class="panel-inner"></div>
+                <div class="text-base font-bold text-emerald-300 mb-2 flex items-center gap-2">
+                   <i class="fa-solid fa-tractor"></i> 活跃农场 (Top 12)
+                </div>
+                <div id="farmChart" class="flex-1 w-full"></div>
+             </div>
           </div>
         </section>
 
-        <section class="col-span-6 space-y-5">
-          <div class="panel rounded-2xl p-4">
-            <div class="text-sm text-emerald-200/70">近 24 小时接入趋势（设备运行数据）</div>
-            <div id="dataTrendChart" class="h-[320px] mt-2"></div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-5">
-            <div class="panel rounded-2xl p-4">
-              <div class="text-sm text-emerald-200/70">告警趋势</div>
-              <div id="alarmTrendChart" class="h-[250px] mt-2"></div>
-            </div>
-            <div class="panel rounded-2xl p-4">
-              <div class="text-sm text-emerald-200/70">农场分布（Top 12）</div>
-              <div id="farmChart" class="h-[250px] mt-2"></div>
-            </div>
-          </div>
+        <!-- Right Column -->
+        <section class="col-span-3 flex flex-col gap-6">
+           <div class="panel p-5 rounded h-full flex flex-col overflow-hidden">
+             <div class="panel-inner"></div>
+             <div class="flex items-center justify-between mb-4 border-b border-emerald-500/20 pb-2">
+               <div class="text-base font-bold text-emerald-300 flex items-center gap-2">
+                  <i class="fa-solid fa-bell"></i> 实时告警监控
+               </div>
+               <div class="text-xs text-emerald-500/50 font-mono animate-pulse-slow">LIVE</div>
+             </div>
+             
+             <!-- Auto Scrolling List -->
+             <div id="alarmListWrapper" class="flex-1 overflow-hidden relative">
+                <div id="alarmList" class="space-y-3 absolute w-full transition-transform duration-500">
+                   <!-- Alarm Items -->
+                </div>
+             </div>
+           </div>
         </section>
 
-        <section class="col-span-3 space-y-5">
-          <div class="panel rounded-2xl p-4">
-            <div class="flex items-center justify-between">
-              <div class="text-sm text-emerald-200/70">最新告警（滚动）</div>
-              <div class="text-xs text-emerald-200/60">Top 20</div>
-            </div>
-            <div id="alarmList" class="mt-3 space-y-2 h-[820px] overflow-hidden"></div>
-          </div>
-        </section>
       </main>
     </div>
 
